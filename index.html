@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watchlist · iPhone Duo</title>
+  <style>
+    @font-face {
+      font-family: "TigerRoboto";
+      src: local("Roboto-Regular"), local("Roboto Regular");
+      font-style: normal;
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "TigerRoboto";
+      src: local("Roboto-Medium"), local("Roboto Medium");
+      font-style: normal;
+      font-weight: 500;
+    }
+    :root {
+      --tb-bg-demo: #eceef3;
+      --tb-bg-page: #f9f9f9;
+      --tb-bg-surface: #ffffff;
+      --tb-bg-selected: #f1f1f2;
+      --tb-text-primary: #242632;
+      --tb-text-fixed-black: #171717;
+      --tb-text-secondary: #737888;
+      --tb-text-tertiary: #a7adbb;
+      --tb-border: #f0f1f4;
+      --tb-brand: #ffe100;
+      --tb-positive: #08a866;
+      --tb-negative: #f04e35;
+      --tb-icon: #687087;
+      --tb-font: "TigerRoboto", "Roboto", "PingFang SC", Arial, sans-serif;
+      --tb-number: "TigerRoboto", "Roboto", var(--tb-font);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      /* 预览画布比设备页面略深，便于识别当前 iPhone Duo 屏幕边界。 */
+      background: var(--tb-bg-demo);
+      color: var(--tb-text-primary);
+      font-family: var(--tb-font);
+      font-weight: 400;
+    }
+    button { font: inherit; }
+
+    .demo-header {
+      max-width: 1680px;
+      margin: 0 auto;
+      padding: 34px 34px 16px;
+    }
+    .demo-header h1 { margin: 0; font-size: 22px; line-height: 30px; }
+    .demo-header p { margin: 5px 0 0; color: var(--tb-text-secondary); font-size: 13px; }
+    .showcase {
+      display: flex;
+      align-items: flex-start;
+      gap: 38px;
+      width: max-content;
+      margin: 0 auto;
+      padding: 18px 34px 42px;
+    }
+    .showcase__item { display: grid; gap: 14px; }
+    .showcase__title { color: var(--tb-text-secondary); font-size: 17px; font-weight: 600; }
+
+    .duo-screen {
+      position: relative;
+      overflow: hidden;
+      background: var(--tb-bg-page);
+      border-radius: 16px 16px 0 0;
+      box-shadow: none;
+    }
+    .duo-screen--landscape { width: 890px; height: 626px; }
+    .duo-screen--portrait { width: 669px; height: 798px; }
+    .duo-screen--outer { width: 466px; height: 678px; }
+
+    .tb-watchlist {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-width: 0;
+      background: var(--tb-bg-page);
+    }
+    .duo-screen--landscape .tb-watchlist {
+      width: calc(100% - 84px);
+      padding: 0 17px;
+      background: var(--tb-bg-page);
+    }
+    .duo-screen--portrait .tb-watchlist { padding: 0 15px; }
+    .duo-screen--outer .tb-watchlist { width: calc(100% - 84px); padding: 0 15px; }
+
+    .tb-topbar {
+      height: 84px;
+      flex: 0 0 84px;
+      display: flex;
+      align-items: end;
+      padding-bottom: 14px;
+      gap: 18px;
+      min-width: 0;
+      background: var(--tb-bg-page);
+    }
+    /* .Page Header — top-level watchlist navigation component */
+    .tb-page-header {
+      display: flex;
+      height: 44px;
+      gap: 20px;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .tb-page-header__item {
+      position: relative;
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--tb-text-secondary);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 20px;
+    }
+    .tb-page-header__item.is-active { color: var(--tb-text-primary); font-size: 20px; font-weight: 500; }
+    .tb-page-header__item.is-active::after {
+      position: absolute;
+      width: 33px;
+      right: auto;
+      /* 黄标固定在 Tab 容器底部，完全位于文字下方。 */
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--tb-brand) 0%, color-mix(in srgb, var(--tb-brand) 62%, transparent) 54%, transparent 100%);
+      content: "";
+    }
+    .tb-top-actions {
+      display: flex;
+      height: 44px;
+      gap: 14px;
+      align-items: center;
+      margin-left: auto;
+    }
+    .tb-icon-button {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      color: var(--tb-text-primary);
+      cursor: pointer;
+    }
+    .tb-icon-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .tb-icon-button img { display: block; width: 18px; height: 18px; object-fit: contain; }
+    .tb-ai-avatar { display: block; width: 20.5px; height: 18px; object-fit: contain; }
+
+    .tb-tabs-secondary {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      height: 44px;
+      flex: 0 0 44px;
+      min-width: 0;
+      overflow: hidden;
+      border-radius: 16px 16px 0 0;
+      background: var(--tb-bg-surface);
+      white-space: nowrap;
+    }
+    .duo-screen--landscape .tb-tabs-secondary {
+      /* 与表格一致：左右各延展 17px 的白色留白。 */
+      box-shadow: -17px 0 0 var(--tb-bg-surface), 17px 0 0 var(--tb-bg-surface);
+    }
+    .tb-tab-secondary {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      align-items: center;
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--tb-text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 20px;
+    }
+    .tb-tab-secondary.is-active { color: var(--tb-text-fixed-black); font-weight: 500; }
+    .tb-tab-secondary.is-active::after {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      width: 16px;
+      height: 3px;
+      border-radius: 9px;
+      background: var(--tb-text-fixed-black);
+      content: "";
+      transform: translateX(-50%);
+    }
+    .tb-menu { height: 44px; margin-left: auto; color: var(--tb-icon); font-size: 20px; line-height: 1; }
+
+    .tb-table { display: flex; flex: 1; min-height: 0; overflow: hidden; background: var(--tb-bg-surface); }
+    .duo-screen--landscape .tb-table {
+      /* 表格区延伸至两侧留白，顶部 Tab 的 16px 圆角保持可见。 */
+      box-shadow: -17px 0 0 var(--tb-bg-surface), 17px 0 0 var(--tb-bg-surface);
+    }
+    .tb-table__content { position: relative; display: flex; width: 100%; min-width: 0; min-height: 0; flex: 1; }
+    .tb-table__content::after {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 1px;
+      background: var(--tb-border);
+      content: "";
+      pointer-events: none;
+    }
+    .tb-name-column { display: flex; width: 190px; min-width: 0; flex: 0 0 190px; flex-direction: column; }
+    .tb-name-column__head { display: flex; height: 32px; align-items: center; }
+    .tb-name-rows {
+      min-height: 0;
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tb-name-rows::-webkit-scrollbar { display: none; }
+    .tb-data-column { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+    .tb-data-head-scroll {
+      flex: 0 0 32px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+    .tb-data-head-scroll::-webkit-scrollbar { display: none; }
+    .tb-data-body-scroll {
+      min-width: 0;
+      min-height: 0;
+      flex: 1;
+      overflow: auto;
+      touch-action: pan-x pan-y;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tb-data-body-scroll::-webkit-scrollbar { display: none; }
+    /* 8 列轨道总宽 840px + 7 个 12px 间距 = 924px。 */
+    .tb-data-grid { width: 924px; min-width: 924px; }
+    .tb-data-head, .tb-data-row {
+      display: grid;
+      grid-template-columns: 104px 104px 96px 90px 108px 112px 118px 108px;
+      align-items: center;
+      column-gap: 12px;
+    }
+    .tb-data-head {
+      height: 32px;
+      color: var(--tb-text-tertiary);
+      font-size: 12px;
+    }
+    .tb-data-head > *, .tb-cell { text-align: right; }
+    .tb-head-tools { display: flex; gap: 12px; align-items: center; }
+    .tb-head-tools img { display: block; width: 14px; height: 14px; object-fit: contain; }
+    .tb-sort { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; cursor: pointer; user-select: none; }
+    .tb-sort__icon { width: 5.6px; height: 10.4px; flex: 0 0 auto; object-fit: contain; }
+    .tb-name-row, .tb-data-row {
+      height: 60px;
+      min-height: 60px;
+      flex: 0 0 60px;
+      font-family: var(--tb-number);
+    }
+    .tb-name-row { display: flex; align-items: center; border-bottom: 1px solid var(--tb-border); }
+    .tb-data-rows, .tb-data-row { width: 100%; }
+    .tb-data-row {
+      position: relative;
+      align-items: start;
+      padding-top: 12px;
+      border-bottom: 0;
+      font-family: var(--tb-number);
+      font-weight: 400;
+    }
+    .tb-data-row::after {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 1px;
+      background: var(--tb-border);
+      content: "";
+      pointer-events: none;
+    }
+    .tb-name { width: 100%; min-width: 0; font-family: var(--tb-font); }
+    .tb-name__main { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 500; line-height: 20px; }
+    .tb-name__sub { display: flex; min-width: 0; margin-top: 2px; align-items: center; color: var(--tb-text-secondary); font-size: 11px; line-height: 14px; }
+    .tb-name__sub-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tb-name__status { display: block; flex: 0 0 auto; margin-left: 4px; object-fit: contain; }
+    .tb-name__status--delay { width: 12px; height: 12px; }
+    .tb-name__status--apld { width: 46px; height: 10px; }
+    .tb-name__status--ups { width: 22px; height: 10px; }
+    .tb-data-row .tb-cell { min-width: 0; color: var(--tb-text-primary); font-family: var(--tb-number); font-size: 15px; font-weight: 400; font-variant-numeric: tabular-nums; }
+    .tb-data-row .tb-cell.is-up { color: var(--tb-positive); }
+    .tb-data-row .tb-cell.is-down { color: var(--tb-negative); }
+    /* Price 与 VOL 为中性主数据，不跟随涨跌色。 */
+    .tb-data-row .tb-cell:nth-child(1),
+    .tb-data-row .tb-cell:nth-child(4) { color: var(--tb-text-primary); }
+    .tb-cell__sub { margin-top: 2px; color: var(--tb-text-secondary); font-size: 10px; font-weight: 400; }
+    .tb-cell__tag {
+      display: inline-flex;
+      margin-left: 2px;
+      padding: 1px 2px;
+      border: .5px solid var(--tb-icon);
+      border-radius: 2.5px;
+      color: var(--tb-text-secondary);
+      line-height: 1;
+      vertical-align: 1px;
+    }
+    .is-up { color: var(--tb-positive); }
+    .is-down { color: var(--tb-negative); }
+    .tb-market-badge { display: inline-block; margin-left: 3px; color: var(--tb-icon); font-size: 10px; vertical-align: 1px; }
+
+    /* iPhone Duo/Horizontal Bar/Inner - Portrait */
+    .duo-system-bottom-nav {
+      display: flex;
+      height: 99px;
+      flex: 0 0 99px;
+      align-items: center;
+      justify-content: space-around;
+      margin: 0 4px 0;
+      padding: 10px 22px 20px;
+      border: 1px solid var(--tb-border);
+      border-radius: 32px;
+      background: var(--tb-bg-surface);
+      box-shadow: 0 -8px 20px rgb(18 22 35 / 4%);
+    }
+    .duo-system-bottom-nav__item {
+      display: grid;
+      width: 66px;
+      height: 58px;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      border: 0;
+      border-radius: 24px;
+      background: transparent;
+      color: var(--tb-icon);
+      cursor: pointer;
+      font-size: 10px;
+    }
+    .duo-system-bottom-nav__item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+    .duo-system-bottom-nav__item.is-active { color: var(--tb-text-primary); background: var(--tb-bg-selected); font-weight: 500; }
+    .duo-system-bottom-nav__item.is-active svg { color: var(--tb-text-primary); }
+    .tb-home-indicator { width: 134px; height: 4px; flex: 0 0 4px; margin: 0 auto 10px; border-radius: 99px; background: var(--tb-text-primary); }
+
+    /* iPhone Duo/Vertical Bar — landscape inner display and outer portrait */
+    .duo-system-rail {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 84px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-left: 0;
+      background: var(--tb-bg-page);
+    }
+    .duo-system-rail__art {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .duo-system-rail__art ~ .duo-system-rail__back,
+    .duo-system-rail__art ~ .duo-system-rail__destinations { visibility: hidden; }
+    .duo-system-rail__camera {
+      position: absolute;
+      top: 24px;
+      left: 12px;
+      width: 48px;
+      height: 42px;
+      border-radius: 21px;
+      background: var(--tb-bg-selected);
+    }
+    .duo-system-rail__camera::after {
+      position: absolute;
+      top: 10px;
+      left: 14px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--tb-text-primary);
+      content: "";
+    }
+    .duo-system-rail__status {
+      display: grid;
+      width: 48px;
+      height: 136px;
+      padding-top: 76px;
+      place-items: center;
+      color: var(--tb-text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 16px;
+    }
+    .duo-system-rail__status::after {
+      width: 28px;
+      height: 28px;
+      border: 2px dotted var(--tb-text-primary);
+      border-radius: 50%;
+      content: "⌁";
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+    }
+    .duo-system-rail__back { display: grid; width: 48px; height: 48px; place-items: center; margin-bottom: auto; border: 1px solid var(--tb-border); border-radius: 50%; background: var(--tb-bg-surface); color: var(--tb-text-primary); font-size: 36px; line-height: 1; cursor: pointer; }
+    .duo-system-rail__destinations { display: grid; gap: 8px; width: 48px; padding: 12px 0; border: 1px solid var(--tb-border); border-radius: 24px; }
+    .duo-system-rail__destination { display: grid; width: 48px; height: 40px; place-items: center; border: 0; border-radius: 16px; background: transparent; color: var(--tb-icon); cursor: pointer; }
+    .duo-system-rail__destination svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+    .duo-system-rail__destination.is-active { color: var(--tb-text-primary); }
+    .duo-system-rail__destination.is-active svg { fill: var(--tb-brand); stroke: var(--tb-text-primary); }
+    .duo-screen--landscape .duo-system-rail__destinations { margin-bottom: 14px; }
+    .duo-screen--outer .duo-system-rail__destinations { margin-bottom: 20px; }
+
+    .duo-screen--portrait .tb-name-column { width: 180px; flex-basis: 180px; }
+    .duo-screen--portrait .tb-data-grid { width: 924px; min-width: 924px; }
+    .duo-screen--portrait .tb-name-row, .duo-screen--portrait .tb-data-row { height: 60px; min-height: 60px; flex-basis: 60px; }
+    .duo-screen--outer .tb-topbar { height: 88px; flex-basis: 88px; gap: 12px; padding-bottom: 18px; }
+    .duo-screen--outer .tb-page-header { gap: 17px; }
+    .duo-screen--outer .tb-page-header__item { font-size: 16px; }
+    .duo-screen--outer .tb-page-header__item.is-active { font-size: 20px; }
+    .duo-screen--outer .tb-top-actions { gap: 10px; }
+    .duo-screen--outer .tb-tabs-secondary { gap: 17px; }
+    .duo-screen--outer .tb-tab-secondary { font-size: 12px; }
+    .duo-screen--outer .tb-name-column { width: 146px; flex-basis: 146px; }
+    .duo-screen--outer .tb-data-grid { width: 924px; min-width: 924px; }
+    .duo-screen--outer .tb-name-row, .duo-screen--outer .tb-data-row { height: 60px; min-height: 60px; flex-basis: 60px; }
+    .duo-screen--outer .tb-name__main { font-size: 15px; }
+    .duo-screen--outer .tb-cell { font-size: 14px; }
+
+    .tb-toast { position: absolute; z-index: 5; right: 14px; bottom: 16px; display: none; padding: 10px 12px; border-radius: 9px; background: var(--tb-text-primary); color: var(--tb-bg-surface); font-size: 12px; box-shadow: 0 8px 18px rgb(23 23 23 / 18%); }
+    .tb-toast.is-visible { display: block; }
+
+    @media (max-width: 900px) {
+      .demo-header { padding: 22px 20px 6px; }
+      .showcase { align-items: stretch; margin: 0; padding: 16px 20px 32px; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="demo-header">
+    <h1>Watchlist · iPhone Duo</h1>
+    <p>Final-design conversion: iPhone Duo landscape inner display.</p>
+  </header>
+  <main class="showcase" id="showcase"></main>
+
+  <template id="screen-template">
+    <section class="duo-screen" aria-label="Watchlist">
+      <div class="tb-watchlist">
+        <header class="tb-topbar">
+          <nav class="tb-page-header" aria-label="Page Header">
+            <button class="tb-page-header__item is-active" type="button">Watchlist</button>
+            <button class="tb-page-header__item" type="button">Discover</button>
+            <button class="tb-page-header__item" type="button">US</button>
+            <button class="tb-page-header__item" type="button">HK</button>
+            <button class="tb-page-header__item" type="button">SG</button>
+            <button class="tb-page-header__item" type="button">ETF</button>
+          </nav>
+          <div class="tb-top-actions">
+            <img class="tb-ai-avatar" src="assets/profile/avatar.png" alt="Tiger AI" />
+            <button class="tb-icon-button" type="button" aria-label="TBIconSearch" data-component="TBIconSearch"><img src="assets/figma-icons/tb-icon-search-4.svg" alt="" /></button>
+            <button class="tb-icon-button" type="button" aria-label="TBIconNotice" data-component="TBIconNotice"><img src="assets/figma-icons/tb-icon-notice-4.svg" alt="" /></button>
+          </div>
+        </header>
+        <nav class="tb-tabs-secondary" aria-label="Watchlist filters" data-component="TBTabSecondary">
+          <button class="tb-tab-secondary is-active" type="button">All</button>
+          <button class="tb-tab-secondary" type="button">US</button>
+          <button class="tb-tab-secondary" type="button">HK</button>
+          <button class="tb-tab-secondary" type="button">SG</button>
+          <button class="tb-tab-secondary" type="button">Option(US)</button>
+          <button class="tb-tab-secondary" type="button">Technology</button>
+          <button class="tb-icon-button tb-menu" type="button" aria-label="More filters">☰</button>
+        </nav>
+        <section class="tb-table" aria-label="Watchlist quotes">
+          <div class="tb-table__content">
+            <div class="tb-name-column">
+              <div class="tb-name-column__head">
+                <div class="tb-head-tools" aria-label="Watchlist tools">
+                  <img src="assets/desktop-icons/iphone@2x.png" alt="Display mode" />
+                  <img src="assets/desktop-icons/setting@2x.png" alt="Settings" />
+                  <img src="assets/desktop-icons/slide@2x.png" alt="Switch layout" />
+                </div>
+              </div>
+              <div class="tb-name-rows"></div>
+            </div>
+            <div class="tb-data-column" aria-label="Quote data">
+              <div class="tb-data-head-scroll" aria-hidden="true">
+                <div class="tb-data-grid">
+                  <div class="tb-data-head">
+                    <div class="tb-sort" data-sort="price">Price <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort" data-sort="change">Change <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort" data-sort="percent">Chg% <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort">VOL <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort">T/O Rate <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort">IV Percentile <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort">Capital Flow <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                    <div class="tb-sort">6M %Chg <img class="tb-sort__icon" src="assets/figma-icons/tb-icon-sort-default-2.svg" alt="" /></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tb-data-body-scroll" aria-label="Swipe horizontally and vertically for more quote data">
+              <div class="tb-data-grid">
+                <div class="tb-data-rows"></div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <nav class="duo-system-bottom-nav" aria-label="Duo bottom navigation" data-component="iPhone Duo/Horizontal Bar/Inner - Portrait">
+          <button class="duo-system-bottom-nav__item" type="button"><span>⌂</span><span>Home</span></button>
+          <button class="duo-system-bottom-nav__item is-active" type="button"><span>▣</span><span>Quotes</span></button>
+          <button class="duo-system-bottom-nav__item" type="button"><span>◇</span><span>Wealth</span></button>
+          <button class="duo-system-bottom-nav__item" type="button"><span>▢</span><span>Community</span></button>
+          <button class="duo-system-bottom-nav__item" type="button"><span>◴</span><span>Portfolio</span></button>
+          <button class="duo-system-bottom-nav__item" type="button"><span>♙</span><span>Profile</span></button>
+        </nav>
+        <div class="tb-home-indicator" aria-hidden="true"></div>
+      </div>
+      <aside class="duo-system-rail" aria-label="iPhone Duo control rail" data-component="iPhone Duo/Vertical Bar">
+        <img class="duo-system-rail__art" src="assets/duo/pane-controls.png" alt="" />
+      </aside>
+      <div class="tb-toast" role="status"></div>
+    </section>
+  </template>
+
+  <script>
+    const quotes = [
+      { symbol: 'CATL', sub: '03750', price: 511.500, percent: 0.98, volume: '5.03M', rate: '2.31%', change: 4.600, iv: '8.97%', capitalFlow: '8.97%', sixMonth: '8.97%' },
+      { symbol: 'SMIC', sub: '00981', statusIcon: 'delay', price: 380.000, percent: -1.89, volume: '5.03M', rate: '2.31%', change: -14.600, iv: '8.97%', capitalFlow: '3.31%', sixMonth: '-2.08%', detail: '56.98　 -0.98% Post' },
+      { symbol: 'CAT CALL', sub: '20260925 515.00', price: 5.500, percent: -5.36, volume: '5.03M', rate: '2.31%', change: -9.800, iv: '8.97%', capitalFlow: '-0.52%', sixMonth: '-5.36%', detail: '76.98　 -1.24% Mark' },
+      { symbol: 'APPLIED DIGT...', sub: 'APLD', statusIcon: 'apld', price: 28.500, percent: 1.36, volume: '5.03M', rate: '2.31%', change: 1.600, iv: '8.97%', capitalFlow: '2.40%', sixMonth: '+1.36%', detail: '28.84　 +0.23% 24h' },
+      { symbol: 'Tesla Motors', sub: 'TSLA', price: 378.900, percent: 0.96, volume: '5.03M', rate: '2.31%', change: 3.600, iv: '8.97%', capitalFlow: '6.22%', sixMonth: '+0.96%', detail: '379.54　 +0.19% 24h' },
+      { symbol: 'United Parcel Se...', sub: 'UPS', statusIcon: 'ups', price: 95.870, percent: 1.18, volume: '5.03M', rate: '2.31%', change: 4.800, iv: '8.97%', capitalFlow: '1.76%', sixMonth: '+1.18%', detail: '96.09　 +0.23% Post' },
+      { symbol: 'POP MART', sub: '09992', price: 153.500, percent: -8.11, volume: '5.03M', rate: '2.31%', change: -14.600, iv: '8.97%', capitalFlow: '-4.14%', sixMonth: '-8.11%' },
+      { symbol: 'PING AN', sub: '02318', price: 53.400, percent: -0.93, volume: '5.03M', rate: '2.31%', change: -14.600, iv: '8.97%', capitalFlow: '-1.20%', sixMonth: '-0.93%' }
+    ];
+
+    const additionalSymbols = [
+      ['NVIDIA', 'NVDA'], ['Alphabet', 'GOOGL'], ['Microsoft', 'MSFT'], ['Amazon', 'AMZN'],
+      ['Meta Platforms', 'META'], ['Netflix', 'NFLX'], ['Baidu', 'BIDU'], ['SoFi Technologies', 'SOFI'],
+      ['Rivian Automotive', 'RIVN'], ['Uber Technologies', 'UBER'], ['Shopify', 'SHOP'], ['Palantir', 'PLTR']
+    ];
+    additionalSymbols.forEach(([symbol, sub], index) => {
+      const sign = index % 3 === 1 ? -1 : 1;
+      const percent = Number((sign * (0.42 + index * 0.37)).toFixed(2));
+      const price = Number((42.5 + index * 37.19).toFixed(3));
+      const change = Number((sign * (0.8 + index * 0.61)).toFixed(3));
+      quotes.push({
+        symbol, sub, price, percent, volume: `${(1.15 + index * 0.42).toFixed(2)}M`, rate: `${(1.34 + index * 0.17).toFixed(2)}%`,
+        change, iv: `${(4.6 + index * 0.58).toFixed(2)}%`, capitalFlow: `${sign > 0 ? '+' : '-'}${(0.8 + index * 0.31).toFixed(2)}%`,
+        sixMonth: `${sign > 0 ? '+' : '-'}${(2.2 + index * 0.66).toFixed(2)}%`
+      });
+    });
+
+    // 暂时仅展示横屏；竖屏和外屏的样式、模板逻辑均保留，后续可在此恢复。
+    const screenSpecs = [
+      { mode: 'landscape', title: 'iPhone Duo · 横屏' }
+    ];
+
+    const formatChange = value => `${value > 0 ? '+' : ''}${value.toFixed(3)}`;
+    const formatPercent = value => `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+    const state = new WeakMap();
+    const statusIcons = {
+      delay: { src: 'assets/stock-icons/delay.png', alt: 'Delayed quote' },
+      apld: { src: 'assets/stock-icons/apld-status@2x.png', alt: 'APLD status indicators' },
+      ups: { src: 'assets/stock-icons/ups-status@2x.png', alt: 'UPS status indicators' }
+    };
+
+    function cell(value, className = '', sub = '') {
+      return `<div class="tb-cell ${className}">${value}${sub ? `<div class="tb-cell__sub">${sub}</div>` : ''}</div>`;
+    }
+    function detailMarkup(detail) {
+      if (!detail) return '';
+      const match = detail.trim().match(/^(.*)\s+(Post|Mark|24h)$/);
+      return match ? `${match[1]}<span class="tb-cell__tag">${match[2]}</span>` : detail;
+    }
+    function nameRow(quote) {
+      const icon = statusIcons[quote.statusIcon];
+      const statusMarkup = icon ? `<img class="tb-name__status tb-name__status--${quote.statusIcon}" src="${icon.src}" alt="${icon.alt}" />` : '';
+      return `<article class="tb-name-row"><div class="tb-name"><div class="tb-name__main">${quote.symbol}</div><div class="tb-name__sub"><span class="tb-name__sub-text">${quote.sub}</span>${statusMarkup}</div></div></article>`;
+    }
+    function dataRow(quote) {
+      const trend = quote.percent >= 0 ? 'is-up' : 'is-down';
+      return `<article class="tb-data-row">
+        ${cell(quote.price.toFixed(3), trend, quote.detail ? quote.detail.split('　')[0] : '')}
+        ${cell(formatChange(quote.change), quote.change >= 0 ? 'is-up' : 'is-down')}
+        ${cell(formatPercent(quote.percent), trend, detailMarkup(quote.detail ? quote.detail.split('　').slice(1).join('　') : ''))}
+        ${cell(quote.volume, trend)}
+        ${cell(quote.rate)}
+        ${cell(quote.iv)}
+        ${cell(quote.capitalFlow, quote.capitalFlow.startsWith('-') ? 'is-down' : 'is-up')}
+        ${cell(quote.sixMonth, quote.sixMonth.startsWith('-') ? 'is-down' : 'is-up')}
+      </article>`;
+    }
+    function renderRows(screen, list) {
+      screen.querySelector('.tb-name-rows').innerHTML = list.map(nameRow).join('');
+      screen.querySelector('.tb-data-rows').innerHTML = list.map(dataRow).join('');
+    }
+    function showToast(screen, message) {
+      const toast = screen.querySelector('.tb-toast');
+      toast.textContent = message;
+      toast.classList.add('is-visible');
+      window.setTimeout(() => toast.classList.remove('is-visible'), 1500);
+    }
+    function activateWithin(container, target) {
+      container.querySelectorAll('button').forEach(button => button.classList.remove('is-active'));
+      target.classList.add('is-active');
+    }
+    function bindScreen(screen) {
+      state.set(screen, { quotes: [...quotes], sortDirection: 1 });
+      renderRows(screen, quotes);
+      const nameScroller = screen.querySelector('.tb-name-rows');
+      const dataScroller = screen.querySelector('.tb-data-body-scroll');
+      const headerScroller = screen.querySelector('.tb-data-head-scroll');
+      let syncingVertical = false;
+      nameScroller.addEventListener('scroll', () => {
+        if (syncingVertical) return;
+        syncingVertical = true;
+        dataScroller.scrollTop = nameScroller.scrollTop;
+        syncingVertical = false;
+      });
+      dataScroller.addEventListener('scroll', () => {
+        headerScroller.scrollLeft = dataScroller.scrollLeft;
+        if (syncingVertical) return;
+        syncingVertical = true;
+        nameScroller.scrollTop = dataScroller.scrollTop;
+        syncingVertical = false;
+      });
+      screen.querySelectorAll('.tb-page-header__item').forEach(tab => tab.addEventListener('click', () => {
+        activateWithin(screen.querySelector('.tb-page-header'), tab);
+        showToast(screen, `${tab.textContent} selected`);
+      }));
+      screen.querySelectorAll('.tb-tab-secondary').forEach(tab => tab.addEventListener('click', () => {
+        activateWithin(screen.querySelector('.tb-tabs-secondary'), tab);
+        showToast(screen, `${tab.textContent} filter applied`);
+      }));
+      screen.querySelectorAll('.duo-system-bottom-nav__item').forEach(item => item.addEventListener('click', () => {
+        activateWithin(screen.querySelector('.duo-system-bottom-nav'), item);
+      }));
+      screen.querySelectorAll('.duo-system-rail__destination').forEach(item => item.addEventListener('click', () => {
+        activateWithin(screen.querySelector('.duo-system-rail__destinations'), item);
+      }));
+      screen.querySelector('.duo-system-rail__back')?.addEventListener('click', () => showToast(screen, 'Back'));
+      screen.querySelectorAll('[data-sort]').forEach(header => header.addEventListener('click', () => {
+        const current = state.get(screen);
+        const field = header.dataset.sort;
+        current.sortDirection *= -1;
+        current.quotes.sort((a, b) => (a[field] - b[field]) * current.sortDirection);
+        renderRows(screen, current.quotes);
+      }));
+      screen.querySelector('[aria-label="TBIconSearch"]').addEventListener('click', () => showToast(screen, 'Search is ready'));
+      screen.querySelector('[aria-label="TBIconNotice"]').addEventListener('click', () => showToast(screen, 'No new notifications'));
+    }
+
+    const showcase = document.querySelector('#showcase');
+    const template = document.querySelector('#screen-template');
+    screenSpecs.forEach(({ mode, title }) => {
+      const item = document.createElement('div');
+      item.className = 'showcase__item';
+      item.innerHTML = `<div class="showcase__title">${title}</div>`;
+      const screen = template.content.firstElementChild.cloneNode(true);
+      screen.classList.add(`duo-screen--${mode}`);
+      if (mode === 'portrait') screen.querySelector('.duo-system-rail').remove();
+      if (mode !== 'portrait') screen.querySelector('.duo-system-bottom-nav').remove();
+      if (mode === 'portrait') screen.querySelector('.tb-home-indicator').style.display = 'block';
+      if (mode !== 'portrait') screen.querySelector('.tb-home-indicator').remove();
+      item.append(screen);
+      showcase.append(item);
+      bindScreen(screen);
+    });
+  </script>
+</body>
+</html>
